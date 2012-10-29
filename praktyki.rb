@@ -1,5 +1,5 @@
 require "rubygems"
-require "hpricot"
+require "nokogiri"
 require "open-uri"
 require "date"
 
@@ -42,22 +42,24 @@ end
 while parseFlag < 1 do
   parseFlag = 1     # Pętla kończy się na stronie z brakiem dat należących do przedziału
   if currentPage == 0      # Wczytywanie html
-    doc = Hpricot(open("http://eztv.it"))
+    doc = Nokogiri::HTML(open("http://eztv.it"))
   else
-    doc = Hpricot(open("http://eztv.it/page_" + currentPage.to_s))
+    doc = Nokogiri::HTML(open("http://eztv.it/page_" + currentPage.to_s))
   end
 
   # Poszukiwanie po tr tabelki z wynikami
-  doc.search("table.forum_header_border/tr").each do |row|
-    rowClass = row.attributes["class"]
+  
+  doc.css(".forum_header_border").css("tr").each do |row|
+
+    rowClass = row["class"]
 
     if rowClass == "forum_space_border"      # Tr z datą
-      currentDate = row.search("b").inner_text
+      currentDate = row.css("b").text
     elsif rowClass == "forum_header_border"  # Tr z wynikiem
-      serialTitle = row.search(".forum_thread_post .epinfo").inner_text  # Tytuł serialu
+      serialTitle = row.css(".forum_thread_post").css(".epinfo").text  # Tytuł serialu
       magnetLink = ""
-      row.search(".forum_thread_post .magnet").each do |result|
-        magnetLink = result.attributes["href"]   # Magnet link
+      row.css(".forum_thread_post").css(".magnet").each do |result|
+        magnetLink = result["href"]   # Magnet link
       end
 
       if in_date_range(currentDate) # Sprawdzenie czy data należy do przedziału czasowego
